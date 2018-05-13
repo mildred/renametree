@@ -60,7 +60,12 @@ main:
 - record the start time
 - for each file in A and B:
     - if the file does not have an id
-        - generate an id based on hashing: the start time, the relative path and a hash of the data
+        - if the file exists in another hierarchy
+            - reuse the same uuid as in the other hierarchy
+        - optionally, if another file exists at that location
+            - associate the inode number to that file uuid
+        - else
+            - optionally, generate an id based on hashing: the start time, the relative path and a hash of the data
     - if the file locations is different than in index
         - record the new file location in the index with the start time
 - we know all files in A and B have an id and their location is recorded

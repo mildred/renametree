@@ -26,6 +26,30 @@ func (idx *Index) GetFileByInum(inum uint64) *File {
 	return nil
 }
 
+func (idx *Index) GetUuidByPath(path string) string {
+	p := idx.GetPathByLastPath(path)
+	if p == nil {
+		return ""
+	} else {
+		return p.Uuid
+	}
+}
+
+func (idx *Index) GetPathByLastPath(path string) *Path {
+	var lastPath *Path
+	for _, p := range idx.Paths {
+		if p.Path == path {
+			if lastPath == nil || lastPath.Time < p.Time {
+				lastPath = p
+			}
+		}
+	}
+	if lastPath != nil && lastPath != idx.GetLastPathByUuid(lastPath.Uuid) {
+		lastPath = nil
+	}
+	return lastPath
+}
+
 func (idx *Index) GetLastPathByUuid(uuid string) *Path {
 	var lastPath *Path
 	for _, path := range idx.Paths {

@@ -61,7 +61,8 @@ main:
 - for each file in A and B:
     - if the file does not have an id
         - generate an id based on hashing: the start time, the relative path and a hash of the data
-    - if the file does 
+    - if the file locations is different than in index
+        - record the new file location in the index with the start time
 - we know all files in A and B have an id and their location is recorded
 - for each file id that exists in both A and B:
     - if their relative path is the same
@@ -75,13 +76,18 @@ main:
 
 tell history for files A and B
 
-- while each file history is starting with the same location
-    - remove each directory from the beginning of each file history
-- if a file has an empty history
-    - it is the oldest file
-    - return other file remaining history
-- if both files still have history
-    - this is a conflict
+- starting by the end of each file history, find a location that is the same on both files at the same time
+- if not found
+    - this is a conflict, return now
+- else, process only history from that point in time to the end of history.
+    - while the two histories have the same path as first entry in the history
+        - remove that entry from both histories
+    - if there is a file with an empty history
+        - that file is older, return the remaining history of the new file which contains the new location  
+    - else, both files still have an history continuing
+        - return that there is a conflict
+
+Solving a conflict is as easy as renaming a file in one copy to the same path of the other copy and running the tool again. it will record the same path for both copies of the file for the same point in time and be happy with it.
 
 Index format
 ------------
@@ -97,7 +103,19 @@ The index should contain entries with:
 ### Requirements
 
 - given a file name or an opened file, tell a unique id for it across directories
-- given a unique file id, tell the history of the locations of this file
+- given a file name or an opened file, create a new entry if it does not exists
+- given a file name or an opened file, add a directory to the location history, with time
+- given a unique file id, tell the timed history of the locations of this file
+
+### Format v0
+
+- The database is named `.renametree-%d` where %d is the inode number of the directory the file is on
+- The database is a line based text file
+- the first work up to the first TAB or SPACE character tells the line type:
+    - `FID <UUID> <INUM>`: the line associates a unique ID to an inode
+    - `LOC <UUID> <TIME> <ESCAPED-PATH>`: the line associates a location in time to a file id
+
+The format can be append-only and is easy to parse
 
 Alternative without index
 -------------------------

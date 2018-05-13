@@ -71,6 +71,9 @@ main:
         - move it to the new location and record the new location history in the index
     - if both files have different locations but history cannot tell which one is the correct location
         - record file to show a conflict error
+- for each file that has the same path in A and B
+    - if the uuid is the same, do nothing
+    - else, report a conflict error
 - show all conflict errors
 - exit with status >0 in case of errors
 
@@ -89,16 +92,13 @@ tell history for files A and B
 
 Solving a conflict is as easy as renaming a file in one copy to the same path of the other copy and running the tool again. it will record the same path for both copies of the file for the same point in time and be happy with it.
 
+Solving uuid conflicts is more difficult, it requires a special mode of running
+renametree to change the uuid of an existing file.
+
 Index format
 ------------
 
 The index file name should contain in its name the inode number of the directory it refers to, so in case the file is copied by rsync elsewhere, it is not read mistakenly.
-
-The index should contain entries with:
-
-- the list of past locations of a file
-- the inode number of a file
-- the unique id of a file
 
 ### Requirements
 
@@ -108,6 +108,10 @@ The index should contain entries with:
 - given a unique file id, tell the timed history of the locations of this file
 
 ### Format v0
+
+JSON for simplicity
+
+### Format v1
 
 - The database is named `.renametree-%d` where %d is the inode number of the directory the file is on
 - The database is a line based text file

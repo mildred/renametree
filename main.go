@@ -14,8 +14,10 @@ import (
 func main() {
 	l := log.New(os.Stdout, "", log.LstdFlags)
 	var dryRun bool = false
+	var noConflictUuid = false
 
 	flag.BoolVar(&dryRun, "n", dryRun, "Dry run")
+	flag.BoolVar(&noConflictUuid, "ncu", noConflictUuid, "Don't find conflucting uuid")
 
 	flag.Parse()
 	dirs := flag.Args()
@@ -49,8 +51,10 @@ func main() {
 		log.Fatalf("Detecting renames: %s", err)
 	}
 
-	err = renames.FindConflicts()
-	if err != nil {
-		log.Fatal(err)
+	if !noConflictUuid {
+		err = renames.FindConflicts()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }

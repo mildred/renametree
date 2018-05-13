@@ -35,6 +35,17 @@ func (idx *Index) GetUuidByPath(path string) string {
 	}
 }
 
+func (idx *Index) GetLastPaths() map[string]*Path {
+	res := map[string]*Path{}
+	for _, p := range idx.Paths {
+		p0 := res[p.Uuid]
+		if p0 == nil || p0.Time < p.Time {
+			res[p.Uuid] = p
+		}
+	}
+	return res
+}
+
 func (idx *Index) GetPathByLastPath(path string) *Path {
 	var lastPath *Path
 	for _, p := range idx.Paths {

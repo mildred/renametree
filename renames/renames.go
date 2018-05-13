@@ -161,5 +161,30 @@ func (r *Renames) doRename(baseDir, oldPath, newPath string) (err error) {
 }
 
 func (r *Renames) FindConflicts() (err error) {
-	return nil
+	intersect := map[string]struct {
+		A *index.Path
+		B *index.Path
+	}{}
+	for _, p := range r.dirA.Index.GetLastPaths() {
+		ab := intersect[p.Path]
+		if ab.A == nil || ab.A.Time < p.Time {
+			ab.A = p
+			intersect[p.Path] = ab
+		}
+	}
+	for _, p := range r.dirB.Index.GetLastPaths() {
+		ab := intersect[p.Path]
+		if ab.B == nil || ab.B.Time < p.Time {
+			ab.B = p
+			intersect[p.Path] = ab
+		}
+	}
+	for p, ab := range intersect {
+		if ab.A != nil && ab.B != nil && ab.A.Uuid != ab.B.Uuid {
+			err = multierror.Append(err,
+				fmt.Errorf("Conflict for file %s\n\tuuid=%s in %s\n\tuuid=%s in %s",
+					p, ab.A.Uuid, r.dirA.Path, ab.B.Uuid, r.dirB.Path))
+		}
+	}
+	return err
 }

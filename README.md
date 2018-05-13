@@ -52,3 +52,60 @@ Notes
 - The index is updated each time the tool is executed
 - Files are associated unique identifiers that are shared across synchronized directories
 
+Algorithm
+---------
+
+main:
+
+- record the start time
+- for each file in A and B:
+    - if the file does not have an id
+        - generate an id based on hashing: the start time, the relative path and a hash of the data
+    - if the file does 
+- we know all files in A and B have an id and their location is recorded
+- for each file id that exists in both A and B:
+    - if their relative path is the same
+        - do nothing, files are already at their correct location
+    - if the location history tells one file is on an older location
+        - move it to the new location and record the new location history in the index
+    - if both files have different locations but history cannot tell which one is the correct location
+        - record file to show a conflict error
+- show all conflict errors
+- exit with status >0 in case of errors
+
+tell history for files A and B
+
+- while each file history is starting with the same location
+    - remove each directory from the beginning of each file history
+- if a file has an empty history
+    - it is the oldest file
+    - return other file remaining history
+- if both files still have history
+    - this is a conflict
+
+Index format
+------------
+
+The index file name should contain in its name the inode number of the directory it refers to, so in case the file is copied by rsync elsewhere, it is not read mistakenly.
+
+The index should contain entries with:
+
+- the list of past locations of a file
+- the inode number of a file
+- the unique id of a file
+
+### Requirements
+
+- given a file name or an opened file, tell a unique id for it across directories
+- given a unique file id, tell the history of the locations of this file
+
+Alternative without index
+-------------------------
+
+Without an index file synchronized on both parties, a file can be identified by:
+
+- an inode number, but only for the scope of a directory
+- a data hash but only at some point in time
+- a file name until this is renamed too
+
+It seems impossible to track renames without an index

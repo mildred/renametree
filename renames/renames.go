@@ -2,6 +2,9 @@ package renames
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"path"
 	"sort"
 
 	"github.com/hashicorp/go-multierror"
@@ -9,15 +12,31 @@ import (
 	"github.com/mildred/renametree/index"
 )
 
+type Options struct {
+	// Don't do things
+	DryRun bool
+
+	// Print what we do
+	Verbose bool
+}
+
+var DefaultOptions Options = Options{
+	DryRun:  true,
+	Verbose: true,
+}
+
 type Renames struct {
-	dirA *dir.Dir
-	dirB *dir.Dir
+	Log     *log.Logger
+	dirA    *dir.Dir
+	dirB    *dir.Dir
+	Options Options
 }
 
 func New(dirA, dirB *dir.Dir) *Renames {
 	return &Renames{
-		dirA: dirA,
-		dirB: dirB,
+		dirA:    dirA,
+		dirB:    dirB,
+		Options: DefaultOptions,
 	}
 }
 
@@ -112,15 +131,33 @@ func (r *Renames) Rename() (err error) {
 		} else {
 			hist := newCommonHistory(ab.A, ab.B)
 			if hist.AisOlder() {
-				fmt.Printf("rename in %s %s to %s\n", r.dirA.Path(), ab.A.LastPath(), ab.B.LastPath())
+				r.doRename(r.dirA.Path(), ab.A.LastPath(), ab.B.LastPath())
 			} else if hist.BisOlder() {
-				fmt.Printf("rename in %s %s to %s\n", r.dirB.Path(), ab.B.LastPath(), ab.A.LastPath())
+				r.doRename(r.dirB.Path(), ab.B.LastPath(), ab.A.LastPath())
 			} else {
 				err = multierror.Append(err, fmt.Errorf("Conflict for file %s\n\t%s\n\t%s", uuid, ab.A.LastPath(), ab.B.LastPath()))
 			}
 		}
 	}
 	return
+}
+
+func (r *Renames) doRename(baseDir, oldPath, newPath string) (err error) {
+	renameStr := fmt.Sprintf("rename in %s %s to %s", baseDir, oldPath, newPath)
+	if !r.Options.DryRun {
+		err := os.MkdirAll(path.Dir(path.Join(baseDir, newPath)), 0777)
+		if err != nil {
+			return fmt.Errorf("%s, %e", renameStr, err)
+		}
+		err = os.Rename(path.Join(baseDir, oldPath), path.Join(baseDir, newPath))
+		if err != nil {
+			return fmt.Errorf("%s, %e", renameStr, err)
+		}
+	}
+	if r.Options.Verbose {
+		r.Log.Print(renameStr)
+	}
+	return nil
 }
 
 func (r *Renames) FindConflicts() (err error) {

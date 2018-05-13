@@ -13,6 +13,10 @@ import (
 
 func main() {
 	l := log.New(os.Stdout, "", log.LstdFlags)
+	var dryRun bool = false
+
+	flag.BoolVar(&dryRun, "n", dryRun, "Dry run")
+
 	flag.Parse()
 	dirs := flag.Args()
 	t := time.Now()
@@ -38,6 +42,8 @@ func main() {
 	}
 
 	renames := renames.New(dirA, dirB)
+	renames.Log = l
+	renames.Options.DryRun = dryRun
 	err = renames.Rename()
 	if err != nil {
 		log.Fatalf("Detecting renames: %s", err)
